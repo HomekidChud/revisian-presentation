@@ -97,6 +97,13 @@
     /* Cards repeat their own label in the caption text; collapse the repeat. */
     text = text.replace(/(.{12,90}?)\s*\1\b/g, "$1");
     text = text.replace(/\s*[·|]?\s*(Watch video|Watch on YouTube|Show image|Show GIF|Show diagram)\s*$/i, "");
+    /* Media cards carry their own action labels; drop them and keep the first item. */
+    text = text
+      .replace(/\s*(Load YouTube video player|Load video player|Open original if embedding is blocked|Watch on YouTube|Show image|Show GIF)\s*/gi, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    var first = text.split(/\s*YouTube video\s*/i)[0].trim();
+    if (first.length > 2) text = first;
     /* The card label is often echoed in the caption; drop the repeat. */
     var half = Math.floor(text.length / 2);
     if (text.length > 40) {
@@ -709,6 +716,8 @@
           "<span>Video</span>" + label +
           (vId ? "<small>youtube.com/watch?v=" + esc(vId) + "</small>" : "");
         frame.parentElement.replaceChild(box, frame);
+        var dup = clone.querySelector(".rp-caption");
+        if (dup) dup.remove();
       }
       Array.prototype.forEach.call(clone.querySelectorAll("img"), function (img) {
         img.loading = "eager";
