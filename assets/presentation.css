@@ -330,6 +330,8 @@
   max-width: 24ch;
 }
 .rp-slide[data-kind="blurt"] .rp-hint { color: #b9cbbd; }
+.rp-slide[data-kind="blurt"] .rp-kicker,
+.rp-slide[data-kind="blurt"] .rp-kicker b { color: #9fbfa6; }
 .rp-timer {
   margin-top: 30px;
   display: inline-flex;
