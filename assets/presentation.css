@@ -1,0 +1,553 @@
+/* Revisian — Presentation mode
+   Turns an open note into a 16:9 slide deck you can present or rehearse from. */
+
+.rp-root {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  background: #e9e4d7;
+  color: #1f2b25;
+  font-family: "Satoshi", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.rp-root[data-open="1"] { display: block; }
+
+.rp-root * { box-sizing: border-box; }
+
+/* ---------- chrome ---------- */
+.rp-progress {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: rgba(31, 43, 37, .10);
+  z-index: 4;
+}
+.rp-progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #2f6b4f;
+  transition: width .28s ease;
+}
+
+.rp-topbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  z-index: 4;
+  font-size: 12px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: #6b7a70;
+  opacity: 1;
+  transition: opacity .3s ease;
+}
+.rp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #2f6b4f;
+}
+.rp-brand i {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #2f6b4f;
+}
+.rp-scope {
+  max-width: 52vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  color: #8a978e;
+}
+
+.rp-stage-wrap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 46px 18px 64px;
+}
+
+.rp-stage {
+  position: relative;
+  width: 1200px;
+  height: 675px;
+  transform-origin: center center;
+  background: #fbf8f1;
+  border-radius: 10px;
+  box-shadow: 0 26px 60px rgba(38, 52, 44, .22), 0 2px 0 rgba(255, 255, 255, .9) inset;
+  overflow: hidden;
+}
+
+/* ---------- slide ---------- */
+.rp-slide {
+  position: absolute;
+  inset: 0;
+  padding: 66px 78px 74px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity .22s ease, transform .32s cubic-bezier(.2,.7,.3,1);
+  transform: translateY(10px);
+  pointer-events: none;
+}
+.rp-slide[data-active="1"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.rp-kicker {
+  font-size: 14px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #8a7b55;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.rp-kicker b {
+  color: #2f6b4f;
+  font-weight: 700;
+}
+
+.rp-title {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 44px;
+  line-height: 1.14;
+  font-weight: 500;
+  letter-spacing: -.012em;
+  margin: 0 0 22px;
+  color: #1c2a23;
+  max-width: 21ch;
+}
+.rp-title.rp-long { font-size: 38px; }
+
+.rp-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 96%;
+}
+.rp-bullets li {
+  position: relative;
+  padding-left: 26px;
+  font-size: 22px;
+  line-height: 1.45;
+  color: #33453b;
+}
+.rp-bullets li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: .62em;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: #2f6b4f;
+  opacity: .55;
+}
+.rp-bullets strong { color: #17241d; font-weight: 700; }
+.rp-bullets li.rp-dense { font-size: 19px; }
+.rp-bullets li.rp-tight { font-size: 17px; }
+
+/* title slide */
+.rp-slide[data-kind="title"] {
+  justify-content: center;
+  background:
+    radial-gradient(1100px 480px at 88% -10%, rgba(47,107,79,.15), transparent 62%),
+    #fbf8f1;
+}
+.rp-slide[data-kind="title"] .rp-hero {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 62px;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+  margin: 8px 0 20px;
+  max-width: 24ch;
+  color: #16231c;
+}
+.rp-slide[data-kind="title"] .rp-sub {
+  font-size: 19px;
+  color: #5d6f64;
+  margin-bottom: 30px;
+  max-width: 56ch;
+  line-height: 1.5;
+}
+.rp-chips { display: flex; flex-wrap: wrap; gap: 9px; }
+.rp-chip {
+  font-size: 13px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(47,107,79,.28);
+  color: #2f6b4f;
+  background: rgba(47,107,79,.07);
+}
+.rp-chip.rp-chip-plain {
+  border-color: rgba(31,43,37,.14);
+  color: #6b7a70;
+  background: transparent;
+}
+
+/* section divider */
+.rp-slide[data-kind="section"] {
+  justify-content: center;
+  background: #22352b;
+  color: #f4efe2;
+  padding-left: 96px;
+}
+.rp-slide[data-kind="section"] .rp-secnum {
+  font-size: 15px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #a9c3ad;
+  margin-bottom: 18px;
+}
+.rp-slide[data-kind="section"] .rp-sechead {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 52px;
+  line-height: 1.12;
+  margin: 0;
+  max-width: 22ch;
+  color: #f7f3e8;
+}
+.rp-slide[data-kind="section"] .rp-secnote {
+  margin-top: 20px;
+  font-size: 19px;
+  color: #b9cbbd;
+  max-width: 54ch;
+  line-height: 1.5;
+}
+
+/* media */
+.rp-slide[data-kind="image"], .rp-slide[data-kind="video"] { padding-bottom: 62px; }
+.rp-figure {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid rgba(31,43,37,.10);
+  border-radius: 8px;
+  padding: 14px;
+  overflow: hidden;
+}
+.rp-figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.rp-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 100%;
+  background: #0f1713;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.rp-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.rp-caption {
+  font-family: "Newsreader", Georgia, serif;
+  font-style: italic;
+  font-size: 18px;
+  color: #5d6f64;
+  margin-top: 16px;
+  max-width: 92%;
+}
+
+/* table */
+.rp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 17px;
+  margin-top: 4px;
+}
+.rp-table th, .rp-table td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(31,43,37,.12);
+  vertical-align: top;
+  line-height: 1.35;
+}
+.rp-table th {
+  font-size: 13px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #5d6d62;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(31,43,37,.24);
+}
+.rp-table tr:last-child td { border-bottom: 0; }
+.rp-table strong { color: #17241d; }
+.rp-tablewrap { overflow: hidden; }
+
+/* recap + blurt */
+.rp-slide[data-kind="recap"] .rp-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 6px 0 26px;
+}
+.rp-term {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 26px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  background: #eef1e7;
+  color: #2b4636;
+}
+.rp-hint {
+  font-size: 19px;
+  color: #5d6f64;
+  line-height: 1.55;
+  max-width: 60ch;
+}
+.rp-slide[data-kind="blurt"] {
+  justify-content: center;
+  background: #22352b;
+  color: #f4efe2;
+}
+.rp-slide[data-kind="blurt"] .rp-hero {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 54px;
+  line-height: 1.1;
+  margin: 0 0 18px;
+  max-width: 24ch;
+}
+.rp-slide[data-kind="blurt"] .rp-hint { color: #b9cbbd; }
+.rp-timer {
+  margin-top: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.rp-timer button {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #22352b;
+  background: #e9e2cc;
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 22px;
+  cursor: pointer;
+}
+.rp-timer button:hover { background: #f2ecd9; }
+.rp-clock {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 30px;
+  min-width: 74px;
+  color: #f4efe2;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- resizer / foot ---------- */
+.rp-controls {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 18px;
+  z-index: 5;
+  transition: opacity .3s ease;
+}
+.rp-count {
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #6b7a70;
+  font-variant-numeric: tabular-nums;
+}
+.rp-btns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(31,43,37,.10);
+  border-radius: 999px;
+  padding: 5px;
+  backdrop-filter: blur(6px);
+}
+.rp-btns button {
+  font: inherit;
+  font-size: 12px;
+  color: #33453b;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rp-btns button:hover { background: rgba(47,107,79,.10); }
+.rp-btns button[aria-pressed="true"] { background: #2f6b4f; color: #fff; }
+.rp-btns svg { width: 14px; height: 14px; }
+.rp-root[data-idle="1"] .rp-controls,
+.rp-root[data-idle="1"] .rp-topbar { opacity: 0; }
+.rp-root[data-idle="1"] { cursor: none; }
+
+/* ---------- overview ---------- */
+.rp-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: none;
+  background: #f1ece0;
+  padding: 58px 34px 34px;
+  overflow: auto;
+}
+.rp-grid[data-open="1"] { display: block; }
+.rp-grid h2 {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 26px;
+  margin: 0 0 18px;
+  color: #22352b;
+}
+.rp-grid-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+.rp-grid-item {
+  font: inherit;
+  text-align: left;
+  background: #fbf8f1;
+  border: 1px solid rgba(31,43,37,.10);
+  border-radius: 8px;
+  padding: 14px 15px;
+  cursor: pointer;
+  color: #33453b;
+  min-height: 92px;
+}
+.rp-grid-item:hover { border-color: rgba(47,107,79,.5); }
+.rp-grid-item span {
+  display: block;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #8a978e;
+  margin-bottom: 7px;
+}
+.rp-grid-item strong {
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 600;
+  display: block;
+}
+.rp-grid-item[data-current="1"] { border-color: #2f6b4f; box-shadow: 0 0 0 2px rgba(47,107,79,.18); }
+
+/* ---------- speaker notes ---------- */
+.rp-notes {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 5;
+  max-height: 34vh;
+  overflow: auto;
+  background: rgba(34, 53, 43, .96);
+  color: #e5ede4;
+  padding: 18px 24px 22px;
+  font-size: 14px;
+  line-height: 1.6;
+  display: none;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+.rp-notes[data-open="1"] { display: block; }
+.rp-notes b {
+  display: block;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #9fba9f;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.rp-notes p { margin: 0 0 8px; max-width: 90ch; }
+
+/* ---------- launcher buttons ---------- */
+.rp-launch.btn-present {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.rp-launch svg { width: 15px; height: 15px; }
+
+@media (max-width: 640px) {
+  .rp-topbar { font-size: 10px; padding: 10px 12px; }
+  .rp-scope { display: none; }
+}
+
+/* sparse bullet slides breathe and sit centred under the title */
+.rp-bullets.rp-sparse {
+  margin-top: 26px;
+  gap: 24px;
+  max-width: 100%;
+}
+.rp-slide[data-kind="bullets"][data-density="sparse"] {
+  justify-content: center;
+}
+.rp-slide[data-kind="bullets"][data-density="sparse"] .rp-kicker {
+  position: absolute;
+  top: 56px;
+  left: 78px;
+  margin: 0;
+}
+.rp-bullets.rp-sparse li { font-size: 27px; line-height: 1.42; }
+
+/* title-slide footer */
+.rp-slide[data-kind="title"] .rp-meta {
+  position: absolute;
+  left: 78px;
+  bottom: 46px;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #93a096;
+}
+.rp-slide[data-kind="title"] .rp-meta::before {
+  content: "";
+  display: block;
+  width: 46px;
+  height: 2px;
+  background: #2f6b4f;
+  opacity: .5;
+  margin-bottom: 12px;
+}
+
+/* media slides: compact header so the diagram gets the room */
+.rp-title.rp-media-title { font-size: 30px; margin-bottom: 16px; max-width: 34ch; }
+
+/* dense tables stay inside the slide */
+.rp-tablewrap { flex: 1; min-height: 0; }
+.rp-table.rp-table-dense { font-size: 14.5px; }
+.rp-table.rp-table-dense th,
+.rp-table.rp-table-dense td { padding: 7px 12px; }
+
+/* closing slide: keep the left edge aligned with every other slide */
+.rp-slide[data-kind="blurt"] {
+  align-items: flex-start;
+  text-align: left;
+}
+.rp-slide[data-kind="blurt"] .rp-hero,
+.rp-slide[data-kind="blurt"] .rp-hint {
+  margin-left: 0;
+  margin-right: 0;
+}
