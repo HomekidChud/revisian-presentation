@@ -551,3 +551,87 @@
   margin-left: 0;
   margin-right: 0;
 }
+
+/* ---------- PDF export (print) ---------- */
+.rp-print {
+  display: none;
+  font-family: "Satoshi", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1f2b25;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.rp-print-video {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #0f1713;
+  color: #dfe7e0;
+  border-radius: 6px;
+  font-size: 18px;
+}
+.rp-print-video span {
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #93b09a;
+}
+.rp-print-video em {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 19px;
+  max-width: 60ch;
+  text-align: center;
+  padding: 0 24px;
+}
+.rp-print-video small {
+  font-size: 13px;
+  color: #8ba593;
+  letter-spacing: .02em;
+}
+
+@media print {
+  @page { size: 12.5in 7.03125in; margin: 0; }
+
+  .rp-print, .rp-print * { box-sizing: border-box; }
+
+  html.rp-printing { background: #fff; }
+  html.rp-printing body > *:not(.rp-print) { display: none !important; }
+  html.rp-printing .rp-print { display: block; }
+
+  .rp-print .rp-slide {
+    position: relative;
+    inset: auto;
+    display: flex;
+    width: 1200px;
+    height: 675px;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    overflow: hidden;
+    break-after: page;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .rp-print .rp-slide:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+  .rp-print .rp-slide { background: #fbf8f1; }
+  .rp-print .rp-figure { display: block; height: 400px; width: 100%; text-align: center; }
+  .rp-print .rp-figure img {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+  .rp-print .rp-print-video { height: 400px; display: block; padding: 34px 24px; text-align: center; }
+  .rp-print .rp-slide[data-kind="section"],
+  .rp-print .rp-slide[data-kind="blurt"] { color: #f4efe2; background: #22352b; }
+}

@@ -373,7 +373,8 @@
     notes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg>',
     full: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>',
     exit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
-    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'
+    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h9l4 4v14H6z"/><path d="M9 13h6M9 17h4"/></svg>'
   };
 
   function slideHtml(s) {
@@ -527,6 +528,7 @@
       '<button type="button" data-act="next" aria-label="Next slide">Next' + ICON.next + "</button>" +
       '<button type="button" data-act="grid" aria-label="All slides">' + ICON.grid + "</button>" +
       '<button type="button" data-act="notes" aria-label="Speaker notes">' + ICON.notes + "</button>" +
+      '<button type="button" data-act="pdf" aria-label="Export as PDF" title="Export as PDF">' + ICON.pdf + "</button>" +
       '<button type="button" data-act="full" aria-label="Fullscreen">' + ICON.full + "</button>" +
       '<button type="button" data-act="exit" aria-label="Close presentation">' + ICON.exit + "</button>" +
       "</div></div>";
@@ -676,6 +678,67 @@
     }, 1000);
   }
 
+  /* ---------- PDF export ----------
+   Slides are cloned into a print-only container, one per page at 16:9, and
+   the browser's own "Save as PDF" does the file making. No dependencies. */
+
+  function preparePrint() {
+    if (!state.root) return 0;
+    var existing = document.querySelector(".rp-print");
+    if (existing) existing.remove();
+
+    var holder = document.createElement("div");
+    holder.className = "rp-print";
+
+    Array.prototype.forEach.call(state.root.querySelectorAll(".rp-slide"), function (sl) {
+      var clone = sl.cloneNode(true);
+      clone.removeAttribute("data-active");
+
+      var frame = clone.querySelector("[data-video-id]");
+      if (frame) {
+        var box = document.createElement("div");
+        box.className = "rp-print-video";
+        var caption = sl.querySelector(".rp-caption");
+        var vId = frame.getAttribute("data-video-id") || "";
+        var label = caption && caption.textContent.trim()
+          ? "<em>" + esc(caption.textContent.trim()) + "</em>"
+          : vId
+            ? "<em>Watch: youtu.be/" + esc(vId) + "</em>"
+            : "";
+        box.innerHTML =
+          "<span>Video</span>" + label +
+          (vId ? "<small>youtube.com/watch?v=" + esc(vId) + "</small>" : "");
+        frame.parentElement.replaceChild(box, frame);
+      }
+      Array.prototype.forEach.call(clone.querySelectorAll("img"), function (img) {
+        img.loading = "eager";
+      });
+      holder.appendChild(clone);
+    });
+
+    document.body.appendChild(holder);
+    document.documentElement.classList.add("rp-printing");
+    return holder.children.length;
+  }
+
+  function finishPrint() {
+    var holder = document.querySelector(".rp-print");
+    if (holder) holder.remove();
+    document.documentElement.classList.remove("rp-printing");
+  }
+
+  function exportPdf() {
+    var pages = preparePrint();
+    if (!pages) return;
+    var done = function () {
+      finishPrint();
+      window.removeEventListener("afterprint", done);
+    };
+    window.addEventListener("afterprint", done);
+    setTimeout(function () { window.print(); }, 140);
+    setTimeout(done, 120000);
+  }
+
   function openDeck() {
     var note = analyse();
     if (!note || !note.sections.length) {
@@ -708,6 +771,7 @@
         else if (a === "prev") activate(state.index - 1);
         else if (a === "grid") toggleGrid();
         else if (a === "notes") toggleNotes();
+        else if (a === "pdf") exportPdf();
         else if (a === "full") toggleFull();
         else if (a === "exit") closeDeck();
         wake();
@@ -855,5 +919,12 @@
     schedule();
   }
 
-  window.RevisianPresentation = { open: openDeck, close: closeDeck, analyse: analyse };
+  window.RevisianPresentation = {
+    open: openDeck,
+    close: closeDeck,
+    analyse: analyse,
+    exportPdf: exportPdf,
+    preparePrint: preparePrint,
+    finishPrint: finishPrint
+  };
 })();
